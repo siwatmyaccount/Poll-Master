@@ -108,6 +108,30 @@
                             </div>
                         </div>
                     </div>
+                   <div class="form-group">
+                        <label class="section-label" style="font-size:0.9rem; margin-bottom:12px;">ระยะเวลาโหวต</label>
+                        
+                        <label class="custom-checkbox">
+                            <input type="checkbox" id="forever-checkbox" onchange="app.toggleDurationInput(this)">
+                            <span class="checkmark"></span>
+                            <span class="label-text">♾️ ไม่จำกัดเวลา (ตลอดไป)</span>
+                        </label>
+
+                        <div id="duration-wrapper" class="duration-input-group">
+                            <input type="number" id="duration-val" class="modern-input" value="24" min="1" placeholder="ระบุตัวเลข">
+                            
+                            <div class="select-wrapper" style="min-width: 120px;">
+                                <select id="duration-unit" class="modern-select">
+                                    <option value="min">นาที</option>
+                                    <option value="hour" selected>ชั่วโมง</option>
+                                    <option value="day">วัน</option>
+                                    <option value="month">เดือน</option>
+                                    <option value="year">ปี</option>
+                                </select>
+                                <span class="material-icons-round select-arrow">expand_more</span>
+                            </div>
+                        </div>
+                    </div>
 
                     <div class="form-section">
                         <label class="section-label">ตัวเลือกคำตอบ</label>
@@ -136,7 +160,27 @@
                     <p class="subtitle">ความคิดเห็นของผู้คนวันนี้</p>
                 </div>
             </header>
-            
+
+            <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+                <div class="search-container" style="flex: 1; margin-bottom: 0;">
+                    <span class="material-icons-round search-icon">search</span>
+                    <input type="text" 
+                           class="search-input" 
+                           placeholder="ค้นหาโพลที่น่าสนใจ..." 
+                           oninput="app.handleSearch(event)">
+                </div>
+
+                <div class="select-wrapper" style="width: 140px;">
+                    <select class="modern-select" onchange="app.handleSort(event)" style="padding-left: 14px; border-radius: 50px;">
+                        <option value="newest">ล่าสุด</option>
+                        <option value="popular">ยอดนิยม</option>
+                        <option value="ending">ใกล้จบ</option>
+                        <option value="oldest">เก่าสุด</option>
+                    </select>
+                    <span class="material-icons-round select-arrow" style="right: 12px; font-size: 20px;">sort</span>
+                </div>
+            </div>
+
             <div class="filter-scroll-container">
                 <div class="filter-badge-group" id="filter-badges"></div>
             </div>
@@ -156,6 +200,7 @@
         </section>
 
     </main>
+    <div id="toast-container"></div>
 
     <script src="app.js"></script>
 </body>
