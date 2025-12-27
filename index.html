@@ -38,6 +38,10 @@
         </div>
         
         <ul class="menu-list">
+            <li onclick="app.router('profile')">
+                <span class="material-icons-round">account_circle</span> โปรไฟล์ของฉัน
+            </li>
+
             <li onclick="app.router('feed')">
                 <span class="material-icons-round">dashboard</span> หน้าแรก
             </li>
@@ -47,6 +51,7 @@
             <li onclick="app.router('create')">
                 <span class="material-icons-round">add_circle_outline</span> สร้างโพลใหม่
             </li>
+            
             <div class="divider"></div>
             
             <li onclick="app.toggleDarkMode()" id="dark-mode-btn">
@@ -197,6 +202,42 @@
                 <div style="width: 40px;"></div>
             </header>
             <div id="my-polls-container" class="poll-grid"></div>
+        </section>
+
+        <section id="view-profile" class="view hidden fade-in">
+            <header class="page-header-nav">
+                <button onclick="app.router('feed')" class="icon-btn-back">
+                    <span class="material-icons-round">arrow_back_ios_new</span>
+                </button>
+                <h2>โปรไฟล์ของฉัน</h2>
+                <div style="width: 40px;"></div>
+            </header>
+
+            <div class="create-card center-card" style="text-align: center; padding: 40px 24px;">
+                <div style="width: 100px; height: 100px; background: var(--primary); color: white; font-size: 40px; font-weight: bold; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);">
+                    <span id="profile-avatar">A</span>
+                </div>
+                
+                <h1 id="profile-name" style="margin-bottom: 8px;">Username</h1>
+                <p style="color: var(--text-sub); margin-bottom: 32px;">สมาชิก PollMaster</p>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 32px;">
+                    <div style="background: var(--bg-body); padding: 16px; border-radius: 16px; border: 1px solid var(--border);">
+                        <span class="material-icons-round" style="color: var(--primary); font-size: 32px; margin-bottom: 8px;">campaign</span>
+                        <div id="stat-created" style="font-size: 24px; font-weight: bold;">0</div>
+                        <div style="font-size: 0.85rem; color: var(--text-sub);">โพลที่สร้าง</div>
+                    </div>
+                    <div style="background: var(--bg-body); padding: 16px; border-radius: 16px; border: 1px solid var(--border);">
+                        <span class="material-icons-round" style="color: #ec4899; font-size: 32px; margin-bottom: 8px;">how_to_vote</span>
+                        <div id="stat-voted" style="font-size: 24px; font-weight: bold;">0</div>
+                        <div style="font-size: 0.85rem; color: var(--text-sub);">ร่วมโหวตแล้ว</div>
+                    </div>
+                </div>
+
+                <button onclick="app.logout()" class="btn-danger-soft" style="width: 100%; padding: 12px; font-size: 1rem;">
+                    ออกจากระบบ
+                </button>
+            </div>
         </section>
 
     </main>

@@ -106,7 +106,7 @@ const app = {
                     { id: 'o2', text: "ภูเขา", votes: 12 },
                     { id: 'o3', text: "นอนอยู่บ้าน", votes: 21 }
                 ],
-                comments: [ // เพิ่มโครงสร้าง comments
+                comments: [
                     { user: "Admin", text: "แนะนำภูเขา ช่วงนี้อากาศดี", time: Date.now() - 3600000 }
                 ],
                 createdBy: "Admin",
@@ -181,11 +181,15 @@ const app = {
         }
         this.state.view = viewName;
         this.toggleMenu(false);
+        
+        // --- แก้ไข: เพิ่มเงื่อนไขสำหรับ Profile ---
         if (viewName === 'feed' || viewName === 'my-polls') {
             this.state.searchTerm = '';
             const searchInput = document.querySelector('.search-input');
             if(searchInput) searchInput.value = '';
             this.renderFeed(viewName === 'my-polls');
+        } else if (viewName === 'profile') {
+            this.renderProfile(); // เรียกฟังก์ชันแสดงผลโปรไฟล์
         }
     },
 
@@ -199,17 +203,12 @@ const app = {
     },
 
     toggleDarkMode: function() {
-        // --- ลบส่วนที่เช็ค if (!this.state.currentUser) ออกไปแล้ว ---
-        
         document.body.classList.toggle('dark-mode');
         localStorage.setItem('pm_darkmode', document.body.classList.contains('dark-mode'));
         this.updateDarkModeUI();
         
         const mode = document.body.classList.contains('dark-mode') ? 'โหมดกลางคืน' : 'โหมดสว่าง';
         this.showToast('เปลี่ยนธีม', `ใช้งาน ${mode} แล้ว`, 'success');
-        
-        // (ทางเลือก) ถ้าอยากให้กดแล้วเมนูหุบกลับไป ให้เติมบรรทัดนี้:
-        // this.toggleMenu(false);
     },
 
     updateDarkModeUI: function() {
@@ -270,7 +269,7 @@ const app = {
                 text: input.value,
                 votes: 0
             })),
-            comments: [], // เริ่มต้นไม่มีคอมเมนต์
+            comments: [],
             createdBy: this.state.currentUser.name,
             voters: [],
             status: "active",
@@ -334,13 +333,9 @@ const app = {
 
     deletePoll: function(id) {
         if(confirm('⚠️ คำเตือน: คุณต้องการลบโพลนี้ถาวรใช่ไหม?\nการกระทำนี้ไม่สามารถย้อนกลับได้')) {
-            // กรองเอาโพลนี้ทิ้งไป
             this.state.polls = this.state.polls.filter(p => p.id !== id);
             this.saveData();
-            
             this.showToast('ลบสำเร็จ', 'โพลถูกลบออกจากระบบแล้ว', 'success');
-            
-            // รีเฟรชหน้าจอ (ถ้าอยู่หน้า My Polls ก็รีเฟรชหน้านั้น)
             this.renderFeed(this.state.view === 'my-polls');
         }
     },
@@ -379,7 +374,7 @@ const app = {
         if(!text) return;
 
         const poll = this.state.polls.find(p => p.id === pollId);
-        if(!poll.comments) poll.comments = []; // กันเหนียว
+        if(!poll.comments) poll.comments = []; 
 
         poll.comments.push({
             user: this.state.currentUser.name,
@@ -388,13 +383,11 @@ const app = {
         });
 
         this.saveData();
-        input.value = ''; // เคลียร์ช่อง
+        input.value = ''; 
         this.showToast('ส่งความคิดเห็น', 'บันทึกคอมเมนต์แล้ว', 'success');
         
-        // Re-render เฉพาะส่วนคอมเมนต์ (แบบบ้านๆ คือ re-render ทั้ง feed แต่เพื่อให้ง่ายต่อโค้ด)
         this.renderFeed(this.state.view === 'my-polls');
         
-        // เปิดคอมเมนต์ค้างไว้
         setTimeout(() => {
             const section = document.getElementById(`comments-${pollId}`);
             if(section) section.classList.add('active');
@@ -406,14 +399,12 @@ const app = {
         
         const poll = this.state.polls.find(p => p.id === pollId);
         if(poll) {
-            // กรองเอาคอมเมนต์ที่มีเวลาไม่ตรงกับ timestamp นี้เก็บไว้ (คือลบตัวที่ตรงทิ้ง)
             poll.comments = poll.comments.filter(c => c.time !== commentTime);
             
             this.saveData();
             this.renderFeed(this.state.view === 'my-polls');
             this.showToast('สำเร็จ', 'ลบความคิดเห็นเรียบร้อย', 'success');
             
-            // สั่งให้เปิดส่วนคอมเมนต์ค้างไว้ (ไม่งั้นมันจะหุบ)
             setTimeout(() => {
                 const section = document.getElementById(`comments-${pollId}`);
                 if(section) section.classList.add('active');
@@ -437,6 +428,32 @@ const app = {
         this.renderFeed(this.state.view === 'my-polls');
     },
 
+    // --- เพิ่มฟังก์ชัน: renderProfile (แสดงหน้าโปรไฟล์) ---
+    renderProfile: function() {
+        if (!this.state.currentUser) return;
+
+        // 1. ตั้งชื่อและรูป Avatar
+        const profileName = document.getElementById('profile-name');
+        const profileAvatar = document.getElementById('profile-avatar');
+        
+        if(profileName) profileName.textContent = this.state.currentUser.name;
+        if(profileAvatar) profileAvatar.textContent = this.state.currentUser.name.charAt(0).toUpperCase();
+
+        // 2. คำนวณสถิติ
+        // นับจำนวนโพลที่ 'ชื่อผู้สร้าง' ตรงกับเรา
+        const createdCount = this.state.polls.filter(p => p.createdBy === this.state.currentUser.name).length;
+        
+        // นับจำนวนโพลที่มี 'ID ของเรา' อยู่ในรายชื่อคนโหวต
+        const votedCount = this.state.polls.filter(p => p.voters.includes(this.state.currentUser.id)).length;
+
+        // 3. แสดงผลตัวเลข
+        const statCreated = document.getElementById('stat-created');
+        const statVoted = document.getElementById('stat-voted');
+        
+        if(statCreated) statCreated.textContent = createdCount;
+        if(statVoted) statVoted.textContent = votedCount;
+    },
+
     renderFilterBadges: function() {
         const categories = [
             {id: 'all', label: 'ทั้งหมด'},
@@ -456,52 +473,39 @@ const app = {
         `).join('');
     },
 
-   renderFeed: function(showMyPolls = false) {
-        // ประกาศตัวแปรทั้ง 2 กล่อง
+    renderFeed: function(showMyPolls = false) {
         const feedContainer = document.getElementById('feed-container');
         const myPollsContainer = document.getElementById('my-polls-container');
 
-        // เลือกกล่องที่จะใช้งาน
         const container = showMyPolls ? myPollsContainer : feedContainer;
 
-        // --- แก้ไข: ล้างข้อมูลทั้ง 2 กล่องเพื่อไม่ให้ ID ชนกัน ---
         feedContainer.innerHTML = '';
         myPollsContainer.innerHTML = '';
-        // ----------------------------------------------------
 
-        // โค้ดส่วนดึงข้อมูล (เหมือนเดิม)
         let data = this.state.polls;
         if (showMyPolls) data = data.filter(p => p.createdBy === this.state.currentUser.name);
         else if (this.state.currentFilter !== 'all') data = data.filter(p => p.category === this.state.currentFilter);
-
-        // --- เริ่มส่วน Logic การเรียงลำดับ (Sorting) ---
+        
+        // Logic Sorting
         data.sort((a, b) => {
             const now = Date.now();
             switch(this.state.currentSort) {
                 case 'popular':
-                    // เรียงตามจำนวนคนโหวต (มาก -> น้อย)
                     return b.voters.length - a.voters.length;
-                
                 case 'ending':
-                    // เรียงตามเวลาที่เหลือ (น้อย -> มาก) เฉพาะที่ยังไม่จบ
-                    // ถ้าจบแล้วเอาไปไว้ท้ายสุด
                     if (a.status === 'ended' && b.status !== 'ended') return 1;
                     if (a.status !== 'ended' && b.status === 'ended') return -1;
-                    if (!a.deadline) return 1; // ไม่มีวันหมดอายุเอาไว้ท้าย
+                    if (!a.deadline) return 1;
                     if (!b.deadline) return -1;
                     return (a.deadline - now) - (b.deadline - now);
-
                 case 'oldest':
                     return a.timestamp - b.timestamp;
-
                 case 'newest':
                 default:
                     return b.timestamp - a.timestamp;
             }
         });
-        // --- จบส่วน Logic การเรียงลำดับ ---
 
-        // ... (ต่อด้วย if (data.length === 0) ของเดิม ...)
         if (data.length === 0) {
             const emptyMsg = this.state.searchTerm ? `ไม่พบโพลที่เกี่ยวกับ "${this.state.searchTerm}"` : 'ไม่มีรายการโพล';
             container.innerHTML = `
@@ -512,19 +516,15 @@ const app = {
             return;
         }
 
-       data.forEach(poll => {
-            // Auto Close Check
+        data.forEach(poll => {
             if (poll.deadline && Date.now() > poll.deadline && poll.status === 'active') { poll.status = 'ended'; }
 
             const hasVoted = poll.voters.includes(this.state.currentUser.id) || poll.status === 'ended';
             const totalVotes = poll.options.reduce((a, b) => a + b.votes, 0);
             const remaining = this.getRemainingTime(poll.deadline);
             
-            // --- เพิ่มบรรทัดนี้: เช็คว่าเป็นเจ้าของโพลไหม? ---
             const isOwner = poll.createdBy === this.state.currentUser.name;
-            // ------------------------------------------
 
-            // Comment Count
             const comments = poll.comments || [];
             const commentCount = comments.length;
 
@@ -584,7 +584,6 @@ const app = {
                 content += `</div>`;
             }
 
-            // Footer Actions
             content += `
                 <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
                     <div style="display:flex; gap:12px; align-items:center;">
