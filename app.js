@@ -199,15 +199,17 @@ const app = {
     },
 
     toggleDarkMode: function() {
-        if (!this.state.currentUser) {
-            this.showToast('แจ้งเตือน', 'กรุณาเข้าสู่ระบบก่อน', 'error');
-            this.toggleMenu(false); return;
-        }
+        // --- ลบส่วนที่เช็ค if (!this.state.currentUser) ออกไปแล้ว ---
+        
         document.body.classList.toggle('dark-mode');
         localStorage.setItem('pm_darkmode', document.body.classList.contains('dark-mode'));
         this.updateDarkModeUI();
+        
         const mode = document.body.classList.contains('dark-mode') ? 'โหมดกลางคืน' : 'โหมดสว่าง';
         this.showToast('เปลี่ยนธีม', `ใช้งาน ${mode} แล้ว`, 'success');
+        
+        // (ทางเลือก) ถ้าอยากให้กดแล้วเมนูหุบกลับไป ให้เติมบรรทัดนี้:
+        // this.toggleMenu(false);
     },
 
     updateDarkModeUI: function() {
@@ -327,6 +329,19 @@ const app = {
             p.status = 'ended'; this.saveData();
             this.showToast('เรียบร้อย', 'ปิดรับคะแนนโหวตแล้ว', 'success');
             this.renderFeed(true);
+        }
+    },
+
+    deletePoll: function(id) {
+        if(confirm('⚠️ คำเตือน: คุณต้องการลบโพลนี้ถาวรใช่ไหม?\nการกระทำนี้ไม่สามารถย้อนกลับได้')) {
+            // กรองเอาโพลนี้ทิ้งไป
+            this.state.polls = this.state.polls.filter(p => p.id !== id);
+            this.saveData();
+            
+            this.showToast('ลบสำเร็จ', 'โพลถูกลบออกจากระบบแล้ว', 'success');
+            
+            // รีเฟรชหน้าจอ (ถ้าอยู่หน้า My Polls ก็รีเฟรชหน้านั้น)
+            this.renderFeed(this.state.view === 'my-polls');
         }
     },
 
@@ -497,7 +512,7 @@ const app = {
             return;
         }
 
-        data.forEach(poll => {
+       data.forEach(poll => {
             // Auto Close Check
             if (poll.deadline && Date.now() > poll.deadline && poll.status === 'active') { poll.status = 'ended'; }
 
@@ -505,6 +520,10 @@ const app = {
             const totalVotes = poll.options.reduce((a, b) => a + b.votes, 0);
             const remaining = this.getRemainingTime(poll.deadline);
             
+            // --- เพิ่มบรรทัดนี้: เช็คว่าเป็นเจ้าของโพลไหม? ---
+            const isOwner = poll.createdBy === this.state.currentUser.name;
+            // ------------------------------------------
+
             // Comment Count
             const comments = poll.comments || [];
             const commentCount = comments.length;
@@ -529,7 +548,6 @@ const app = {
             `;
 
             if (!hasVoted) {
-                // ... (ส่วนแสดงปุ่มโหวต เดิมๆ ไม่ต้องแก้) ...
                 content += `<div class="options-list">`;
                 poll.options.forEach(opt => {
                     content += `<button class="poll-option-btn" onclick="app.vote(${poll.id}, '${opt.id}')">
@@ -539,18 +557,14 @@ const app = {
                 });
                 content += `</div>`;
             } else {
-                // --- แก้ไขตรงนี้ (ส่วนแสดงผลลัพธ์) ---
                 content += `<div class="results-list">`;
-                // เรียงลำดับคะแนน
                 const sorted = [...poll.options].sort((a,b) => b.votes - a.votes);
                 const maxVote = sorted[0].votes;
                 
                 poll.options.forEach(opt => {
-                    // คำนวณเปอร์เซ็นต์
                     const pct = totalVotes === 0 ? 0 : ((opt.votes/totalVotes)*100).toFixed(1);
                     const isWinner = opt.votes === maxVote && totalVotes > 0;
                     
-                    // แสดงบาร์คะแนน (Progress Bar) แทนปุ่มคอมเมนต์ที่ซ้ำ
                     content += `
                         <div class="result-item">
                             <div class="result-info">
@@ -570,22 +584,35 @@ const app = {
                 content += `</div>`;
             }
 
-            // Footer Actions (Vote count + Share + Comment Toggle)
+            // Footer Actions
             content += `
                 <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
                     <div style="display:flex; gap:12px; align-items:center;">
                         <span style="font-size:0.85rem; color:var(--text-sub);">โดย ${poll.createdBy} • ${totalVotes} โหวต</span>
                     </div>
                     
-                   <div style="display:flex; gap:10px;">
+                    <div style="display:flex; gap:10px;">
                         <button class="comment-btn" onclick="app.toggleComments(${poll.id})">
                             <span class="material-icons-round" style="font-size:18px;">chat_bubble_outline</span>
                             <span>Comments (${commentCount})</span>
                         </button>
                         
-                        ${showMyPolls ? 
-                            `<button onclick="app.endPoll(${poll.id})" class="btn-danger-soft">ยุติ</button>` : 
-                            `<button onclick="app.sharePoll(${poll.id}, event)" class="btn-text" style="font-size:0.85rem; display:flex; align-items:center; gap:4px;"><span class="material-icons-round" style="font-size:16px;">share</span> แชร์</button>`
+                        ${isOwner ? 
+                            `
+                            <div style="display:flex; gap:8px;">
+                                ${poll.status !== 'ended' ? 
+                                    `<button onclick="app.endPoll(${poll.id})" class="btn-danger-soft" title="ปิดรับผลโหวต">ยุติ</button>` 
+                                : ''}
+                                
+                                <button onclick="app.deletePoll(${poll.id})" class="icon-btn-back" style="width:32px; height:32px; border-radius:50%; color:var(--text-sub);" title="ลบโพลทิ้ง">
+                                    <span class="material-icons-round" style="font-size:18px;">delete</span>
+                                </button>
+                            </div>
+                            ` 
+                            : 
+                            `<button onclick="app.sharePoll(${poll.id}, event)" class="btn-text" style="font-size:0.85rem; display:flex; align-items:center; gap:4px;">
+                                <span class="material-icons-round" style="font-size:16px;">share</span> แชร์
+                            </button>`
                         }
                     </div>
                 </div>
@@ -601,9 +628,7 @@ const app = {
                     <div class="comment-list">
                         ${comments.length === 0 ? '<p style="font-size:0.8rem; color:var(--text-sub); text-align:center;">ยังไม่มีความคิดเห็น เป็นคนแรกเลย!</p>' : ''}
                         ${comments.slice().reverse().map(c => {
-                            // เช็คว่าเป็นเจ้าของคอมเมนต์หรือไม่?
-                            const isOwner = c.user === this.state.currentUser.name;
-                            
+                            const isCommentOwner = c.user === this.state.currentUser.name;
                             return `
                             <div class="comment-item">
                                 <div class="comment-avatar">${c.user.charAt(0).toUpperCase()}</div>
@@ -612,8 +637,7 @@ const app = {
                                         <span class="comment-user">${c.user}</span>
                                         <div style="display:flex; align-items:center;">
                                             <span class="comment-time">${app.timeAgo(c.time)}</span>
-                                            
-                                            ${isOwner ? `
+                                            ${isCommentOwner ? `
                                                 <button class="btn-delete-comment" onclick="app.deleteComment(${poll.id}, ${c.time})" title="ลบความเห็น">
                                                     <span class="material-icons-round">delete_outline</span>
                                                 </button>
