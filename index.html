@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PollMaster</title>
+    
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='12' fill='%236366f1'/%3E%3Cpath fill='%23ffffff' d='M11 29q-1.25 0-2.125-.875T8 26V10q0-1.25.875-2.125T11 7h18q1.25 0 2.125.875T32 10v16q0 1.25-.875 2.125T29 29Zm0-3h18V10H11v16Zm3.5-2.75 6-6-2.125-2.125-3.875 3.875-1.875-1.875-2.125 2.125 4 4Zm-3.5 2.75V10v16Z' transform='translate(2,2) scale(0.9)'/%3E%3C/svg%3E" type="image/svg+xml">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+</head>
+<body class="dark-mode">
+
+    <nav class="navbar">
+        <div class="nav-left" onclick="app.router('feed')">
+            <div class="logo-bg">
+                <span class="material-icons-round">how_to_vote</span>
+            </div>
+            <span class="brand-name">PollMaster</span>
+        </div>
+        
+        <div class="nav-right">
+            <div id="auth-section">
+                </div>
+            <button class="icon-btn menu-trigger" onclick="app.toggleMenu()">
+                <span class="material-icons-round">menu</span>
+            </button>
+        </div>
+    </nav>
+
+    <aside id="side-menu" class="side-menu">
+        <div class="menu-header">
+            <h3>เมนูหลัก</h3>
+            <button onclick="app.toggleMenu()" class="icon-btn close-btn">
+                <span class="material-icons-round">close</span>
+            </button>
+        </div>
+        
+        <ul class="menu-list">
+            <li onclick="app.router('feed')">
+                <span class="material-icons-round">dashboard</span> หน้าแรก
+            </li>
+            <li onclick="app.router('my-polls')">
+                <span class="material-icons-round">history</span> จัดการโพลของฉัน
+            </li>
+            <li onclick="app.router('create')">
+                <span class="material-icons-round">add_circle_outline</span> สร้างโพลใหม่
+            </li>
+            <div class="divider"></div>
+            
+            <li onclick="app.toggleDarkMode()" id="dark-mode-btn">
+                <span class="material-icons-round" id="dark-mode-icon">light_mode</span>
+                <span id="dark-mode-text">โหมดสว่าง</span>
+            </li>
+
+            <li onclick="app.logout()" class="menu-danger">
+                <span class="material-icons-round">logout</span> ออกจากระบบ
+            </li>
+        </ul>
+    </aside>
+    <div class="overlay" onclick="app.toggleMenu()"></div>
+
+    <main class="container">
+        
+        <section id="view-login" class="view hidden fade-in">
+            <div class="auth-card center-card">
+                <div class="auth-header">
+                    <h1>ยินดีต้อนรับ</h1>
+                    <p>เข้าสู่ระบบเพื่อเริ่มใช้งาน</p>
+                </div>
+                <form onsubmit="app.login(event)">
+                    <div class="input-group">
+                        <input type="text" id="username-input" class="modern-input lg" placeholder="ชื่อผู้ใช้งานของคุณ" required>
+                    </div>
+                    <button type="submit" class="btn-primary full-width">เข้าสู่ระบบ</button>
+                </form>
+            </div>
+        </section>
+
+        <section id="view-create" class="view hidden fade-in">
+            <header class="page-header-nav">
+                <button onclick="app.confirmExitCreate()" class="icon-btn-back">
+                    <span class="material-icons-round">arrow_back_ios_new</span>
+                </button>
+                <h2>สร้างโพลใหม่</h2>
+                <div style="width: 40px;"></div>
+            </header>
+
+            <div class="create-card">
+                <form onsubmit="app.createPoll(event)" class="create-form">
+                    <div class="form-section">
+                        <label class="section-label">รายละเอียดโพล</label>
+                        <div class="form-group">
+                            <input type="text" name="question" required placeholder="พิมพ์คำถามของคุณที่นี่..." class="modern-input lg">
+                        </div>
+                        
+                        <div class="form-group">
+                            <div class="select-wrapper">
+                                <select name="category" class="modern-select">
+                                    <option value="general">🌍 ทั่วไป (General)</option>
+                                    <option value="tech">💻 เทคโนโลยี (Tech)</option>
+                                    <option value="food">🍜 อาหาร (Food)</option>
+                                    <option value="travel">✈️ ท่องเที่ยว (Travel)</option>
+                                    <option value="love">❤️ ความรัก (Love)</option>
+                                </select>
+                                <span class="material-icons-round select-arrow">expand_more</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <label class="section-label">ตัวเลือกคำตอบ</label>
+                        <div id="options-container">
+                            <input type="text" class="modern-input option-input" placeholder="ตัวเลือกที่ 1" required>
+                            <input type="text" class="modern-input option-input" placeholder="ตัวเลือกที่ 2" required>
+                        </div>
+                        
+                        <button type="button" class="btn-ghost-dashed full-width" onclick="app.addOptionInput()">
+                            <span class="material-icons-round">add</span> เพิ่มตัวเลือก
+                        </button>
+                    </div>
+
+                    <div class="form-actions-bottom">
+                        <button type="button" class="btn-secondary" onclick="app.confirmExitCreate()">ยกเลิก</button>
+                        <button type="submit" class="btn-primary">โพสต์โพลเลย</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <section id="view-feed" class="view fade-in">
+            <header class="feed-header-actions">
+                <div class="header-title-row">
+                    <h2>สำรวจโพล</h2>
+                    <p class="subtitle">ความคิดเห็นของผู้คนวันนี้</p>
+                </div>
+            </header>
+            
+            <div class="filter-scroll-container">
+                <div class="filter-badge-group" id="filter-badges"></div>
+            </div>
+            
+            <div id="feed-container" class="poll-grid"></div>
+        </section>
+
+        <section id="view-my-polls" class="view hidden fade-in">
+            <header class="page-header-nav">
+                <button onclick="app.router('feed')" class="icon-btn-back">
+                    <span class="material-icons-round">arrow_back_ios_new</span>
+                </button>
+                <h2>จัดการโพลของฉัน</h2>
+                <div style="width: 40px;"></div>
+            </header>
+            <div id="my-polls-container" class="poll-grid"></div>
+        </section>
+
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>
